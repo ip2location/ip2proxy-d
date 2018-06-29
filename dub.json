@@ -1,0 +1,11 @@
+{
+	"name": "ip2proxy-d",
+	"authors": [
+		"IP2Location"
+	],
+	"description": "IP2Proxy D Library",
+	"homepage": "https://www.ip2location.com/ip2proxy/developers/d",
+	"copyright": "Copyright © 2018, IP2Location",
+	"license": "MIT",
+	"targetType": "library"
+}
