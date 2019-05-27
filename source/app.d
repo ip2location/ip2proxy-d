@@ -2,7 +2,7 @@ import std.stdio;
 import ip2proxy;
 
 int main() {
-	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.BIN";
+	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN.BIN";
 	auto prox = new ip2proxy();
 	
 	if (prox.open(db) == 0) {
@@ -20,6 +20,11 @@ int main() {
 		writeln("Region: ", prox.get_region(ip));
 		writeln("City: ", prox.get_city(ip));
 		writeln("ISP: ", prox.get_isp(ip));
+		writeln("Domain: ", prox.get_domain(ip));
+		writeln("UsageType: ", prox.get_usage_type(ip));
+		writeln("ASN: ", prox.get_asn(ip));
+		writeln("AS: ", prox.get_as(ip));
+		writeln("LastSeen: ", prox.get_last_seen(ip));
 		
 		// function for all fields
 		auto all = prox.get_all(ip);
@@ -30,6 +35,11 @@ int main() {
 		writeln("Region: ", all["Region"]);
 		writeln("City: ", all["City"]);
 		writeln("ISP: ", all["ISP"]);
+		writeln("Domain: ", all["Domain"]);
+		writeln("UsageType: ", all["UsageType"]);
+		writeln("ASN: ", all["ASN"]);
+		writeln("AS: ", all["AS"]);
+		writeln("LastSeen: ", all["LastSeen"]);
 	}
 	else {
 		writeln("Error reading BIN file.");

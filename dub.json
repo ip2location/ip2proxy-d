@@ -4,8 +4,8 @@
 		"IP2Location"
 	],
 	"description": "IP2Proxy D Library",
-	"homepage": "https://www.ip2location.com/ip2proxy/developers/d",
-	"copyright": "Copyright © 2018, IP2Location",
+	"homepage": "https://www.ip2location.com/development-libraries/ip2proxy/d",
+	"copyright": "Copyright © 2019, IP2Location",
 	"license": "MIT",
 	"targetType": "library"
 }
