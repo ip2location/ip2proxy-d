@@ -55,10 +55,15 @@ const ubyte[9] ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9];
 const ubyte[9] AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10];
 const ubyte[9] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11];
 
-protected const string MODULE_VERSION = "2.0.0";
+protected const string MODULE_VERSION = "2.1.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");
+protected const BigInt FROM_6TO4 = BigInt("42545680458834377588178886921629466624");
+protected const BigInt TO_6TO4 = BigInt("42550872755692912415807417417958686719");
+protected const BigInt FROM_TEREDO = BigInt("42540488161975842760550356425300246528");
+protected const BigInt TO_TEREDO = BigInt("42540488241204005274814694018844196863");
+protected const BigInt LAST_32BITS = BigInt("4294967295");
 
 protected const uint COUNTRYSHORT = 0X00001;
 protected const uint COUNTRYLONG = 0X00002;
@@ -318,6 +323,26 @@ class ip2proxy {
 					ipdata.iptype = 4;
 					uint ipno2 = (ipno[12] << 24) + (ipno[13] << 16) + (ipno[14] << 8) + ipno[15];
 					ipdata.ipnum = ipno2;
+					if (meta.ipv4indexbaseaddr > 0) {
+						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
+					}
+				}
+				else if (ipdata.ipnum >= FROM_6TO4 && ipdata.ipnum <= TO_6TO4) {
+					// 6to4 so need to remap to ipv4
+					ipdata.iptype = 4;
+					ipdata.ipnum = ipdata.ipnum >> 80;
+					ipdata.ipnum = ipdata.ipnum & LAST_32BITS;
+					uint ipno2 = to!uint(ipdata.ipnum);
+					if (meta.ipv4indexbaseaddr > 0) {
+						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
+					}
+				}
+				else if (ipdata.ipnum >= FROM_TEREDO && ipdata.ipnum <= TO_TEREDO) {
+					// Teredo so need to remap to ipv4
+					ipdata.iptype = 4;
+					ipdata.ipnum = ~ipdata.ipnum; // bitwise NOT
+					ipdata.ipnum = ipdata.ipnum & LAST_32BITS;
+					uint ipno2 = to!uint(ipdata.ipnum);
 					if (meta.ipv4indexbaseaddr > 0) {
 						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
 					}
