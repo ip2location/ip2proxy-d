@@ -35,6 +35,7 @@ protected struct ip2proxyrecord {
 	string asn = "-";
 	string as = "-";
 	string last_seen = "-";
+	string threat = "-";
 	byte is_proxy = -1;
 }
 
@@ -44,18 +45,19 @@ protected struct ipv {
 	uint ipindex = 0; 
 }
 
-const ubyte[9] COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3];
-const ubyte[9] REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4];
-const ubyte[9] CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5];
-const ubyte[9] ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6];
-const ubyte[9] PROXYTYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2];
-const ubyte[9] DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7];
-const ubyte[9] USAGETYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8];
-const ubyte[9] ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9];
-const ubyte[9] AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10];
-const ubyte[9] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11];
+const ubyte[11] COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ubyte[11] REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4];
+const ubyte[11] CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5];
+const ubyte[11] ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6];
+const ubyte[11] PROXYTYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+const ubyte[11] DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7];
+const ubyte[11] USAGETYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8];
+const ubyte[11] ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9];
+const ubyte[11] AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10];
+const ubyte[11] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11];
+const ubyte[11] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12];
 
-protected const string MODULE_VERSION = "2.2.0";
+protected const string MODULE_VERSION = "2.3.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");
@@ -77,8 +79,9 @@ protected const uint USAGETYPE = 0X00100;
 protected const uint ASN = 0X00200;
 protected const uint AS = 0X00400;
 protected const uint LASTSEEN = 0X00800;
+protected const uint THREAT = 0X01000;
 
-protected const uint ALL = COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | PROXYTYPE | ISPROXY | DOMAIN | USAGETYPE | ASN | AS | LASTSEEN;
+protected const uint ALL = COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | PROXYTYPE | ISPROXY | DOMAIN | USAGETYPE | ASN | AS | LASTSEEN | THREAT;
 
 protected const string MSG_NOT_SUPPORTED = "NOT SUPPORTED";
 protected const string MSG_INVALID_IP = "INVALID IP ADDRESS";
@@ -101,6 +104,7 @@ class ip2proxy {
 	private uint asn_position_offset;
 	private uint as_position_offset;
 	private uint lastseen_position_offset;
+	private uint threat_position_offset;
 	
 	private bool country_enabled;
 	private bool region_enabled;
@@ -112,6 +116,7 @@ class ip2proxy {
 	private bool asn_enabled;
 	private bool as_enabled;
 	private bool lastseen_enabled;
+	private bool threat_enabled;
 	
 	// constructor
 	public this() {
@@ -165,6 +170,7 @@ class ip2proxy {
 		asn_position_offset = 0;
 		as_position_offset = 0;
 		lastseen_position_offset = 0;
+		threat_position_offset = 0;
 		country_enabled = false;
 		region_enabled = false;
 		city_enabled = false;
@@ -175,6 +181,7 @@ class ip2proxy {
 		asn_enabled = false;
 		as_enabled = false;
 		lastseen_enabled = false;
+		threat_enabled = false;
 		
 		destroy(db);
 		
@@ -282,6 +289,7 @@ class ip2proxy {
 			// asn_position_offset = (ASN_POSITION[dbt] != 0) ? (ASN_POSITION[dbt] - 1) << 2 : 0;
 			// as_position_offset = (AS_POSITION[dbt] != 0) ? (AS_POSITION[dbt] - 1) << 2 : 0;
 			// lastseen_position_offset = (LASTSEEN_POSITION[dbt] != 0) ? (LASTSEEN_POSITION[dbt] - 1) << 2 : 0;
+			// threat_position_offset = (THREAT_POSITION[dbt] != 0) ? (THREAT_POSITION[dbt] - 1) << 2 : 0;
 			
 			// offset slightly different when reading by row
 			country_position_offset = (COUNTRY_POSITION[dbt] != 0) ? (COUNTRY_POSITION[dbt] - 2) << 2 : 0;
@@ -294,6 +302,7 @@ class ip2proxy {
 			asn_position_offset = (ASN_POSITION[dbt] != 0) ? (ASN_POSITION[dbt] - 2) << 2 : 0;
 			as_position_offset = (AS_POSITION[dbt] != 0) ? (AS_POSITION[dbt] - 2) << 2 : 0;
 			lastseen_position_offset = (LASTSEEN_POSITION[dbt] != 0) ? (LASTSEEN_POSITION[dbt] - 2) << 2 : 0;
+			threat_position_offset = (THREAT_POSITION[dbt] != 0) ? (THREAT_POSITION[dbt] - 2) << 2 : 0;
 			
 			country_enabled = (COUNTRY_POSITION[dbt] != 0) ? true : false;
 			region_enabled = (REGION_POSITION[dbt] != 0) ? true : false;
@@ -305,6 +314,7 @@ class ip2proxy {
 			asn_enabled = (ASN_POSITION[dbt] != 0) ? true : false;
 			as_enabled = (AS_POSITION[dbt] != 0) ? true : false;
 			lastseen_enabled = (LASTSEEN_POSITION[dbt] != 0) ? true : false;
+			threat_enabled = (THREAT_POSITION[dbt] != 0) ? true : false;
 			
 			metaok = true;
 		}
@@ -425,6 +435,7 @@ class ip2proxy {
 		x["ASN"] = data.asn;
 		x["AS"] = data.as;
 		x["LastSeen"] = data.last_seen;
+		x["Threat"] = data.threat;
 		
 		return x;
 	}
@@ -493,6 +504,12 @@ class ip2proxy {
 	public auto get_last_seen(const string ipaddress) {
 		auto data = query(ipaddress, LASTSEEN);
 		return data.last_seen;
+	}
+	
+	// get threat
+	public auto get_threat(const string ipaddress) {
+		auto data = query(ipaddress, THREAT);
+		return data.threat;
 	}
 	
 	// is proxy
@@ -639,6 +656,11 @@ class ip2proxy {
 				if ((mode & LASTSEEN) && (lastseen_enabled)) {
 					// x.last_seen = readstr(readuint(rowoffset + lastseen_position_offset));
 					x.last_seen = readstr(readuint_row(row, lastseen_position_offset));
+				}
+				
+				if ((mode & THREAT) && (threat_enabled)) {
+					// x.threat = readstr(readuint(rowoffset + threat_position_offset));
+					x.threat = readstr(readuint_row(row, threat_position_offset));
 				}
 				
 				if ((x.country_short == "-") || (x.proxy_type == "-")) {
