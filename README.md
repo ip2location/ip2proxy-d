@@ -40,15 +40,16 @@ Below are the methods supported in this library.
 |get_as|Return the autonomous system name of the proxy.|
 |get_last_seen|Return the number of days that the proxy was last seen.|
 |get_threat|Return the threat type of the proxy.|
+|get_provider|Return the provider of the proxy.|
 
 ## Usage
 
 ```d
 import std.stdio;
-import ip2proxy;
+import ip2proxy : ip2proxy;
 
 int main() {
-	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN";
+	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN";
 	auto prox = new ip2proxy();
 	
 	if (prox.open(db) == 0) {
@@ -72,6 +73,7 @@ int main() {
 		writeln("AS: ", prox.get_as(ip));
 		writeln("LastSeen: ", prox.get_last_seen(ip));
 		writeln("Threat: ", prox.get_threat(ip));
+		writeln("Provider: ", prox.get_provider(ip));
 		
 		// function for all fields
 		auto all = prox.get_all(ip);
@@ -88,6 +90,7 @@ int main() {
 		writeln("AS: ", all["AS"]);
 		writeln("LastSeen: ", all["LastSeen"]);
 		writeln("Threat: ", all["Threat"]);
+		writeln("Provider: ", all["Provider"]);
 	}
 	else {
 		writeln("Error reading BIN file.");
