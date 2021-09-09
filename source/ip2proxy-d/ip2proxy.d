@@ -62,7 +62,7 @@ const ubyte[12] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11];
 const ubyte[12] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12];
 const ubyte[12] PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13];
 
-protected const string MODULE_VERSION = "3.1.0";
+protected const string MODULE_VERSION = "3.2.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");

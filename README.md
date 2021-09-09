@@ -5,6 +5,9 @@ This D library allows user to query an IP address if it was being used as VPN an
 * Free IP2Proxy BIN Data: http://lite.ip2location.com
 * Commercial IP2Proxy BIN Data: https://www.ip2location.com/database/ip2proxy
 
+As an alternative, this component can also call the IP2Proxy Web Service. This requires an API key. If you don't have an existing API key, you can subscribe for one at the below:
+
+https://www.ip2location.com/web-service/ip2proxy
 
 ## Installation
 
@@ -15,6 +18,8 @@ To install this library using dub:
     "ip2proxy-d": "~master"
 }
 ```
+
+## QUERY USING THE BIN FILE
 
 ## Methods
 Below are the methods supported in this library.
@@ -100,3 +105,106 @@ int main() {
 	return 0;
 }
 ```
+
+## QUERY USING THE IP2PROXY PROXY DETECTION WEB SERVICE
+
+## Methods
+Below are the methods supported in this class.
+
+|Method Name|Description|
+|---|---|
+|open(const string apikey, const string apipackage, bool usessl = true)| Expects 3 input parameters:<ol><li>IP2Proxy API Key.</li><li>Package (PX1 - PX11)</li></li><li>Use HTTPS or HTTP</li></ol>|
+|lookup(const string ipaddress)|Query IP address. This method returns a JSONValue containing the proxy info. <ul><li>countryCode</li><li>countryName</li><li>regionName</li><li>cityName</li><li>isp</li><li>domain</li><li>usageType</li><li>asn</li><li>as</li><li>lastSeen</li><li>threat</li><li>proxyType</li><li>isProxy</li><li>provider</li><ul>|
+|get_credit()|This method returns the web service credit balance in a JSONValue.|
+
+## Usage
+
+```d
+import std.stdio;
+import std.conv : to;
+import ip2proxywebservice : ip2proxywebservice;
+
+int main() {
+	auto ip = "8.8.8.8";
+	auto apikey = "YOUR_API_KEY";
+	auto apipackage = "PX11";
+	auto usessl = true;
+	
+	auto ws = new ip2proxywebservice();
+	
+	ws.open(apikey, apipackage, usessl);
+	
+	auto result = ws.lookup(ip);
+	
+	if ("response" in result && result["response"].str == "OK") {
+		writefln("countryCode: %s", ("countryCode" in result) ? result["countryCode"].str : "");
+		writefln("countryName: %s", ("countryName" in result) ? result["countryName"].str : "");
+		writefln("regionName: %s", ("regionName" in result) ? result["regionName"].str : "");
+		writefln("cityName: %s", ("cityName" in result) ? result["cityName"].str : "");
+		writefln("isp: %s", ("isp" in result) ? result["isp"].str : "");
+		writefln("domain: %s", ("domain" in result) ? result["domain"].str : "");
+		writefln("usageType: %s", ("usageType" in result) ? result["usageType"].str : "");
+		writefln("asn: %s", ("asn" in result) ? result["asn"].str : "");
+		writefln("as: %s", ("as" in result) ? result["as"].str : "");
+		writefln("lastSeen: %s", ("lastSeen" in result) ? result["lastSeen"].str : "");
+		writefln("proxyType: %s", ("proxyType" in result) ? result["proxyType"].str : "");
+		writefln("threat: %s", ("threat" in result) ? result["threat"].str : "");
+		writefln("isProxy: %s", ("isProxy" in result) ? result["isProxy"].str : "");
+		writefln("provider: %s", ("provider" in result) ? result["provider"].str : "");
+	}
+	else if ("response" in result) {
+		writefln("Error: %s", result["response"]);
+	}
+	else {
+		writeln("Error: Unknown error.");
+	}
+	
+	auto result2 = ws.get_credit();
+	
+	if ("response" in result2) {
+		writefln("Credit balance: %d", to!int(result2["response"].str));
+	}
+	else {
+		writeln("Error: Unknown error.");
+	}
+	
+	return 0;
+}
+```
+
+### Proxy Type
+
+|Proxy Type|Description|
+|---|---|
+|VPN|Anonymizing VPN services|
+|TOR|Tor Exit Nodes|
+|PUB|Public Proxies|
+|WEB|Web Proxies|
+|DCH|Hosting Providers/Data Center|
+|SES|Search Engine Robots|
+|RES|Residential Proxies [PX10+]|
+
+### Usage Type
+
+|Usage Type|Description|
+|---|---|
+|COM|Commercial|
+|ORG|Organization|
+|GOV|Government|
+|MIL|Military|
+|EDU|University/College/School|
+|LIB|Library|
+|CDN|Content Delivery Network|
+|ISP|Fixed Line ISP|
+|MOB|Mobile ISP|
+|DCH|Data Center/Web Hosting/Transit|
+|SES|Search Engine Spider|
+|RSV|Reserved|
+
+### Threat Type
+
+|Threat Type|Description|
+|---|---|
+|SPAM|Spammer|
+|SCANNER|Security Scanner or Attack|
+|BOTNET|Spyware or Malware|
