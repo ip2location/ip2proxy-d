@@ -17,6 +17,8 @@ protected struct ip2proxymeta {
 	uint ipv4databaseaddr;
 	uint ipv6databasecount;
 	uint ipv6databaseaddr;
+	bool ipv4indexed;
+	bool ipv6indexed;
 	uint ipv4indexbaseaddr;
 	uint ipv6indexbaseaddr;
 	uint ipv4columnsize;
@@ -62,7 +64,7 @@ const ubyte[12] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11];
 const ubyte[12] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12];
 const ubyte[12] PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13];
 
-protected const string MODULE_VERSION = "3.2.0";
+protected const string MODULE_VERSION = "3.3.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");
@@ -164,6 +166,8 @@ class ip2proxy {
 		meta.ipv4databaseaddr = 0;
 		meta.ipv6databasecount = 0;
 		meta.ipv6databaseaddr = 0;
+		meta.ipv4indexed = false;
+		meta.ipv6indexed = false;
 		meta.ipv4indexbaseaddr = 0;
 		meta.ipv6indexbaseaddr = 0;
 		meta.ipv4columnsize = 0;
@@ -204,9 +208,10 @@ class ip2proxy {
 	
 	// read string
 	private string readstr(uint index) {
-		uint pos = index + 1;
-		ubyte len = cast(ubyte)db[index]; // get length of string
-		char[] stuff = cast(char[])db[pos .. (pos + len)];
+		uint bytes = 256; // max size of string + 1 byte for length
+		ubyte[] row = cast(ubyte[])db[index .. (index + bytes)];
+		ubyte len = row[0]; // get length of string
+		char[] stuff = cast(char[])row[1 .. (len + 1)];
 		return to!string(stuff);
 	}
 	
@@ -226,6 +231,19 @@ class ip2proxy {
 			uint tiny = cast(ubyte)db[pos + x];
 			result += (tiny << (8 * x));
 		}
+		return result;
+	}
+	
+	// read unsigned 128-bit integer from row
+	private BigInt readuint128_row(ref ubyte[] row, uint index) {
+		ubyte[16] buf = row[index .. (index + 16)];
+		BigInt result = BigInt("0");
+		
+		for (int x = 0; x < 16; x++) {
+			BigInt biggie = buf[x];
+			result += (biggie << (8 * x));
+		}
+		
 		return result;
 	}
 	
@@ -255,25 +273,36 @@ class ip2proxy {
 		try {
 			db = new MmFile(binfile);
 			
-			meta.databasetype = db[0];
-			meta.databasecolumn = db[1];
-			meta.databaseyear = db[2];
-			meta.databasemonth = db[3];
-			meta.databaseday = db[4];
-			meta.ipv4databasecount =  readuint(6);
-			meta.ipv4databaseaddr =  readuint(10);
-			meta.ipv6databasecount =  readuint(14);
-			meta.ipv6databaseaddr =  readuint(18);
-			meta.ipv4indexbaseaddr =  readuint(22);
-			meta.ipv6indexbaseaddr =  readuint(26);
-			meta.productcode = db[29];
+			ubyte len = 64; // 64-byte header
+			ubyte[] row = cast(ubyte[])db[0 .. len];
+			
+			meta.databasetype = row[0];
+			meta.databasecolumn = row[1];
+			meta.databaseyear = row[2];
+			meta.databasemonth = row[3];
+			meta.databaseday = row[4];
+			meta.ipv4databasecount =  readuint_row(row, 5);
+			meta.ipv4databaseaddr =  readuint_row(row, 9);
+			meta.ipv6databasecount =  readuint_row(row, 13);
+			meta.ipv6databaseaddr =  readuint_row(row, 17);
+			meta.ipv4indexbaseaddr =  readuint_row(row, 21);
+			meta.ipv6indexbaseaddr =  readuint_row(row, 25);
+			meta.productcode = row[29];
 			// below 2 fields just read for now, not being used yet
-			meta.producttype = db[30];
-			meta.filesize = readuint(32);
+			meta.producttype = row[30];
+			meta.filesize = readuint_row(row, 31);
 			
 			// check if is correct BIN (should be 2 for IP2Proxy BIN file), also checking for zipped file (PK being the first 2 chars)
 			if ((meta.productcode != 2 && meta.databaseyear >= 21) || (meta.databasetype == 80 && meta.databasecolumn == 75)) { // only BINs from Jan 2021 onwards have this byte set
 				throw new Exception(MSG_INVALID_BIN);
+			}
+			
+			if (meta.ipv4indexbaseaddr > 0) {
+				meta.ipv4indexed = true;
+			}
+			
+			if (meta.ipv6databasecount > 0 && meta.ipv6indexbaseaddr > 0) {
+				meta.ipv6indexed = true;
 			}
 			
 			meta.ipv4columnsize = meta.databasecolumn << 2; // 4 bytes each column
@@ -332,7 +361,7 @@ class ip2proxy {
 				ipdata.iptype = 4;
 				uint ipno = new InternetAddress(ip, 80).addr();
 				ipdata.ipnum = ipno;
-				if (meta.ipv4indexbaseaddr > 0) {
+				if (meta.ipv4indexed) {
 					ipdata.ipindex = ((ipno >> 16) << 3) + meta.ipv4indexbaseaddr;
 				}
 			}
@@ -343,7 +372,7 @@ class ip2proxy {
 					BigInt biggie = ipno[x];
 					ipdata.ipnum += (biggie << (8 * y));
 				}
-				if (meta.ipv6indexbaseaddr > 0) {
+				if (meta.ipv6indexed) {
 					ipdata.ipindex = (((ipno[0] << 8) + ipno[1]) << 3) + meta.ipv6indexbaseaddr;
 				}
 				
@@ -352,7 +381,7 @@ class ip2proxy {
 					ipdata.iptype = 4;
 					uint ipno2 = (ipno[12] << 24) + (ipno[13] << 16) + (ipno[14] << 8) + ipno[15];
 					ipdata.ipnum = ipno2;
-					if (meta.ipv4indexbaseaddr > 0) {
+					if (meta.ipv4indexed) {
 						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
 					}
 				}
@@ -362,7 +391,7 @@ class ip2proxy {
 					ipdata.ipnum = ipdata.ipnum >> 80;
 					ipdata.ipnum = ipdata.ipnum & LAST_32BITS;
 					uint ipno2 = to!uint(ipdata.ipnum);
-					if (meta.ipv4indexbaseaddr > 0) {
+					if (meta.ipv4indexed) {
 						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
 					}
 				}
@@ -372,7 +401,7 @@ class ip2proxy {
 					ipdata.ipnum = ~ipdata.ipnum; // bitwise NOT
 					ipdata.ipnum = ipdata.ipnum & LAST_32BITS;
 					uint ipno2 = to!uint(ipdata.ipnum);
-					if (meta.ipv4indexbaseaddr > 0) {
+					if (meta.ipv4indexed) {
 						ipdata.ipindex = ((ipno2 >> 16) << 3) + meta.ipv4indexbaseaddr;
 					}
 				}
@@ -404,6 +433,18 @@ class ip2proxy {
 			}
 			else {
 				writefln("%s: %d", __traits(identifier, x.tupleof[i]), part);
+			}
+		}
+	}
+	
+	// for debugging purposes
+	public void printmeta(ip2proxymeta x) {
+		foreach (i, ref part; x.tupleof) {
+			static if (is(typeof(part) == string)) {
+				writefln("%s: %s", __traits(identifier, x.tupleof[i]), part);
+			}
+			else {
+				writefln("%s: %f", __traits(identifier, x.tupleof[i]), part);
 			}
 		}
 	}
@@ -542,10 +583,15 @@ class ip2proxy {
 		uint rowoffset = 0;
 		uint rowoffset2 = 0;
 		uint countrypos = 0;
+		uint start = 0;
+		uint end = 0;
+		ubyte[] row;
+		ubyte[] fullrow;
 		BigInt ipno = ipdata.ipnum;
 		BigInt ipfrom;
 		BigInt ipto;
 		BigInt maxip;
+		uint firstcol = 4; // 4 bytes for ip from
 		
 		if (ipdata.iptype == 4) {
 			baseaddr = meta.ipv4databaseaddr;
@@ -554,6 +600,7 @@ class ip2proxy {
 			colsize = meta.ipv4columnsize;
 		}
 		else {
+			firstcol = 16; // 16 bytes for ipv6
 			if (meta.ipv6databasecount == 0) {
 				x = loadmessage(MSG_IPV6_UNSUPPORTED);
 				return x;
@@ -566,8 +613,11 @@ class ip2proxy {
 		
 		// reading index
 		if (ipdata.ipindex > 0) {
-			low = readuint(ipdata.ipindex);
-			high = readuint(ipdata.ipindex + 4);
+			start = (ipdata.ipindex - 1);
+			end = start + 8; // 4 bytes each for IP From and IP To
+			row = cast(ubyte[])db[start .. end];
+			low = readuint_row(row, 0);
+			high = readuint_row(row, 4);
 		}
 		
 		if (ipno >= maxip) {
@@ -579,21 +629,23 @@ class ip2proxy {
 			rowoffset = baseaddr + (mid * colsize);
 			rowoffset2 = rowoffset + colsize;
 			
+			// reading IP From + whole row + next IP From
+			start = (rowoffset - 1);
+			end = start + colsize + firstcol;
+			fullrow = cast(ubyte[])db[start .. end];
+			
 			if (ipdata.iptype == 4) {
-				ipfrom = readuint(rowoffset);
-				ipto = readuint(rowoffset2);
+				ipfrom = readuint_row(fullrow, 0);
+				ipto = readuint_row(fullrow, colsize);
 			}
 			else {
-				ipfrom = readuint128(rowoffset);
-				ipto = readuint128(rowoffset2);
+				ipfrom = readuint128_row(fullrow, 0);
+				ipto = readuint128_row(fullrow, colsize);
 			}
 			
 			if ((ipno >= ipfrom) && (ipno < ipto)) {
-				uint firstcol = 4; // 4 bytes for ip from
-				if (ipdata.iptype == 6) {
-					firstcol = 16; // 16 bytes for ipv6
-				}
-				ubyte[] row = cast(ubyte[])db[(rowoffset + firstcol - 1) .. (rowoffset + colsize - 1)];
+				uint rowlen = colsize - firstcol;
+				row = fullrow[firstcol .. (firstcol + rowlen)]; // extract the actual row data
 				
 				if (proxytype_enabled) {
 					if ((mode & PROXYTYPE) || (mode & ISPROXY)) {
