@@ -29,7 +29,7 @@ import std.stdio;
 import ip2proxy : ip2proxy;
 
 int main() {
-	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN";
+	string db = "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER-FRAUDSCORE.BIN";
 	auto prox = new ip2proxy();
 	
 	if (prox.open(db) == 0) {
@@ -54,6 +54,7 @@ int main() {
 		writeln("LastSeen: ", prox.get_last_seen(ip));
 		writeln("Threat: ", prox.get_threat(ip));
 		writeln("Provider: ", prox.get_provider(ip));
+		writeln("FraudScore: ", prox.get_fraud_score(ip));
 		
 		// function for all fields
 		auto all = prox.get_all(ip);
@@ -71,6 +72,7 @@ int main() {
 		writeln("LastSeen: ", all["LastSeen"]);
 		writeln("Threat: ", all["Threat"]);
 		writeln("Provider: ", all["Provider"]);
+		writeln("FraudScore: ", all["FraudScore"]);
 	}
 	else {
 		writeln("Error reading BIN file.");

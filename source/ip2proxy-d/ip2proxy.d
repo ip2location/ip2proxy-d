@@ -42,6 +42,7 @@ protected struct ip2proxyrecord {
 	string last_seen = "-";
 	string threat = "-";
 	string provider = "-";
+	string fraud_score = "-";
 	byte is_proxy = -1;
 }
 
@@ -51,20 +52,21 @@ protected struct ipv {
 	uint ipindex = 0; 
 }
 
-const ubyte[12] COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
-const ubyte[12] REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4];
-const ubyte[12] CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5];
-const ubyte[12] ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6];
-const ubyte[12] PROXYTYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
-const ubyte[12] DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7];
-const ubyte[12] USAGETYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8];
-const ubyte[12] ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9];
-const ubyte[12] AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10];
-const ubyte[12] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11];
-const ubyte[12] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12];
-const ubyte[12] PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13];
+const ubyte[13] COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ubyte[13] REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+const ubyte[13] CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+const ubyte[13] ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6];
+const ubyte[13] PROXYTYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+const ubyte[13] DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7];
+const ubyte[13] USAGETYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8];
+const ubyte[13] ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9];
+const ubyte[13] AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10];
+const ubyte[13] LASTSEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11];
+const ubyte[13] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12];
+const ubyte[13] PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13];
+const ubyte[13] FRAUDSCORE_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14];
 
-protected const string MODULE_VERSION = "3.3.0";
+protected const string MODULE_VERSION = "3.4.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");
@@ -88,8 +90,9 @@ protected const uint AS = 0X00400;
 protected const uint LASTSEEN = 0X00800;
 protected const uint THREAT = 0X01000;
 protected const uint PROVIDER = 0X02000;
+protected const uint FRAUDSCORE = 0X04000;
 
-protected const uint ALL = COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | PROXYTYPE | ISPROXY | DOMAIN | USAGETYPE | ASN | AS | LASTSEEN | THREAT | PROVIDER;
+protected const uint ALL = COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | PROXYTYPE | ISPROXY | DOMAIN | USAGETYPE | ASN | AS | LASTSEEN | THREAT | PROVIDER | FRAUDSCORE;
 
 protected const string MSG_NOT_SUPPORTED = "NOT SUPPORTED";
 protected const string MSG_INVALID_IP = "INVALID IP ADDRESS";
@@ -115,6 +118,7 @@ class ip2proxy {
 	private uint lastseen_position_offset;
 	private uint threat_position_offset;
 	private uint provider_position_offset;
+	private uint fraudscore_position_offset;
 	
 	private bool country_enabled;
 	private bool region_enabled;
@@ -128,6 +132,7 @@ class ip2proxy {
 	private bool lastseen_enabled;
 	private bool threat_enabled;
 	private bool provider_enabled;
+	private bool fraudscore_enabled;
 	
 	// constructor
 	public this() {
@@ -188,6 +193,7 @@ class ip2proxy {
 		lastseen_position_offset = 0;
 		threat_position_offset = 0;
 		provider_position_offset = 0;
+		fraudscore_position_offset = 0;
 		country_enabled = false;
 		region_enabled = false;
 		city_enabled = false;
@@ -200,6 +206,7 @@ class ip2proxy {
 		lastseen_enabled = false;
 		threat_enabled = false;
 		provider_enabled = false;
+		fraudscore_enabled = false;
 		
 		destroy(db);
 		
@@ -322,6 +329,7 @@ class ip2proxy {
 			lastseen_position_offset = (LASTSEEN_POSITION[dbt] != 0) ? (LASTSEEN_POSITION[dbt] - 2) << 2 : 0;
 			threat_position_offset = (THREAT_POSITION[dbt] != 0) ? (THREAT_POSITION[dbt] - 2) << 2 : 0;
 			provider_position_offset = (PROVIDER_POSITION[dbt] != 0) ? (PROVIDER_POSITION[dbt] - 2) << 2 : 0;
+			fraudscore_position_offset = (FRAUDSCORE_POSITION[dbt] != 0) ? (FRAUDSCORE_POSITION[dbt] - 2) << 2 : 0;
 			
 			country_enabled = (COUNTRY_POSITION[dbt] != 0);
 			region_enabled = (REGION_POSITION[dbt] != 0);
@@ -335,6 +343,7 @@ class ip2proxy {
 			lastseen_enabled = (LASTSEEN_POSITION[dbt] != 0);
 			threat_enabled = (THREAT_POSITION[dbt] != 0);
 			provider_enabled = (PROVIDER_POSITION[dbt] != 0);
+			fraudscore_enabled = (FRAUDSCORE_POSITION[dbt] != 0);
 			
 			metaok = true;
 		}
@@ -469,6 +478,7 @@ class ip2proxy {
 		x["LastSeen"] = data.last_seen;
 		x["Threat"] = data.threat;
 		x["Provider"] = data.provider;
+		x["FraudScore"] = data.fraud_score;
 		
 		return x;
 	}
@@ -549,6 +559,12 @@ class ip2proxy {
 	public auto get_provider(const string ipaddress) {
 		auto data = query(ipaddress, PROVIDER);
 		return data.provider;
+	}
+	
+	// get fraud socre
+	public auto get_fraud_score(const string ipaddress) {
+		auto data = query(ipaddress, FRAUDSCORE);
+		return data.fraud_score;
 	}
 	
 	// is proxy
@@ -703,6 +719,10 @@ class ip2proxy {
 				
 				if ((mode & PROVIDER) && (provider_enabled)) {
 					x.provider = readstr(readuint_row(row, provider_position_offset));
+				}
+				
+				if ((mode & FRAUDSCORE) && (fraudscore_enabled)) {
+					x.fraud_score = readstr(readuint_row(row, fraudscore_position_offset));
 				}
 				
 				if ((x.country_short == "-") || (x.proxy_type == "-")) {
