@@ -1,13 +1,9 @@
 # IP2Proxy D Library
 
-This D library allows user to query an IP address if it was being used as VPN anonymizer, open proxies, web proxies, Tor exits, data center, web hosting (DCH) range, search engine robots (SES), residential proxies (RES), consumer privacy networks (CPN), and enterprise private networks (EPN). It lookup the proxy IP address from **IP2Proxy BIN Data** file. This data file can be downloaded at
+This D library allows user to query an IP address if it was being used as VPN anonymizer, open proxies, web proxies, Tor exits, data center, web hosting (DCH) range, search engine robots (SES), AI crawlers (AIC), residential proxies (RES), consumer privacy networks (CPN), and enterprise private networks (EPN). It lookup the proxy IP address from **IP2Proxy BIN Data** file. This data file can be downloaded at
 
 * Free IP2Proxy BIN Data: http://lite.ip2location.com
 * Commercial IP2Proxy BIN Data: https://www.ip2location.com/database/ip2proxy
-
-As an alternative, this component can also call the IP2Proxy Web Service. This requires an API key. If you don't have an existing API key, you can subscribe for one at the below:
-
-https://www.ip2location.com/web-service/ip2proxy
 
 
 Developer Documentation
@@ -28,6 +24,7 @@ To learn more about installation, usage, and code examples, please visit the dev
 |RES|Residential Proxies [PX10+]|
 |CPN|Consumer Privacy Networks. [PX11+]|
 |EPN|Enterprise Private Networks. [PX11+]|
+|AIC|AI Crawlers. [PX12+]|
 
 ### Usage Type
 
@@ -42,8 +39,10 @@ To learn more about installation, usage, and code examples, please visit the dev
 |CDN|Content Delivery Network|
 |ISP|Fixed Line ISP|
 |MOB|Mobile ISP|
+|ISP/MOB|Fixed Line or Mobile ISP|
 |DCH|Data Center/Web Hosting/Transit|
 |SES|Search Engine Spider|
+|SES/AIC|Search Engine Spider/AI Crawlers|
 |RSV|Reserved|
 
 ### Threat Type

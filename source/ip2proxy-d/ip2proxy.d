@@ -66,7 +66,7 @@ const ubyte[13] THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12];
 const ubyte[13] PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13];
 const ubyte[13] FRAUDSCORE_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14];
 
-protected const string MODULE_VERSION = "3.4.0";
+protected const string MODULE_VERSION = "3.5.0";
 
 protected const BigInt MAX_IPV4_RANGE = BigInt("4294967295");
 protected const BigInt MAX_IPV6_RANGE = BigInt("340282366920938463463374607431768211455");
@@ -729,7 +729,7 @@ class ip2proxy {
 					x.is_proxy = 0;
 				}
 				else {
-					if ((x.proxy_type == "DCH") || (x.proxy_type == "SES")) {
+					if ((x.proxy_type == "DCH") || (x.proxy_type == "SES") || (x.proxy_type == "AIC")) {
 						x.is_proxy = 2;
 					}
 					else {
